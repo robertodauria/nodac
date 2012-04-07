@@ -23,4 +23,8 @@
 
 from math import tanh
 
-ACTIVATION_FUNCTIONS = {'tanh': tanh}
+def tanh_der(x):
+
+    return 1 - tanh(x) ** 2
+
+FUNCTIONS = {'tanh': (tanh, tanh_der)}

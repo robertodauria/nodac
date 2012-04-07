@@ -26,3 +26,6 @@ if __name__ == '__main__':
     sys.path.insert(0, '.')
 
 from nodac import network
+
+NN = network.NeuralNetwork()
+NN.add_layer(10, "tanh")

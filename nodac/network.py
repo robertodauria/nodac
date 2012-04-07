@@ -21,7 +21,7 @@
 
 """This module contains neural network classes."""
 
-from nodac import functions
+from nodac.functions import FUNCTIONS
 
 class NeuralNetwork:
     """A feed-forward neural network """
@@ -39,21 +39,53 @@ class NeuralNetwork:
 
         return self._layers
 
+    def add_layer(self, size=0, activation_function="tanh"):
+        """Generate a layer of the given size and adds it to the network.
+        Args:
+            size: number of neurons of the generated layer.
+            activation_function: name of the activation function.
+        """
+
+        new_layer = Layer(size, activation_function)
+        self._layers.append(new_layer)
+
+    def remove_layer(self, layer_id=0):
+        """Removes the layer with the given id.
+        Args:
+            layer_id: id of the layer to remove.
+        """
+
+        try:
+            if layer_id:
+                self._layers.pop(len(self._layers) - layer_id)
+            else:
+                self._layers.pop()
+        except IndexError:
+            print "Layer with id", layer_id, "doesn't exist"
+
 
 class Layer:
     """A layer of the neural network."""
 
-    def __init__(self):
+    def __init__(self, size, function):
         self._neurons = []
+        self._set_size(size)
+        self._set_function(function)
 
-    def generate(self, size):
-        """Generate a layer of the specified size.
-        Args:
-            size: number of neurons of the generated layer.
-        """
+    def _set_size(self, size):
+        try:
+            for x in xrange(size):
+                self._add_neuron()
+        except IndexError:
+            print "Layer with id", layer_id, "doesn't exist"
 
-        for i in xrange(size):
-            self._neurons.append(Neuron())
+    def _set_function(self, function):
+        for neuron in self._neurons:
+            neuron.set_function(function)
+
+    def _add_neuron(self):
+        new_neuron = Neuron()
+        self._neurons.append(new_neuron)
 
     def activate(self):
         """Activate each neuron of the layer."""
@@ -65,19 +97,21 @@ class Neuron:
     """Represents an artificial neuron """
 
     def __init__(self):
-        self._activation_function = None  # Activation function
+        self._function = None             # Activation function
+        self._function_derivative = None  # Activation function derivative
         self._last_result = 0             # Last activation result
         self._in_links = []               # Inbound links
         self._out_links = []              # Outbound links
         self._weights = []                # Inbound links' weights
 
-    def set_activation_function(self, function_name):
+    def set_function(self, function):
         """Sets the activation function.
         Args:
             function_name: name of the function.
         """
 
-        pass
+        self._function = FUNCTIONS[function][0]
+        self._function_derivative = FUNCTIONS[function][1]
 
     def get_last_result(self):
         """Returns the result of last neuron activation."""
