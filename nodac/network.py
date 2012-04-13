@@ -39,14 +39,14 @@ class NeuralNetwork:
 
         return self._layers
 
-    def add_layer(self, size=0, activation_function="tanh"):
+    def add_layer(self, size=0, function="tanh"):
         """Generate a layer of the given size and adds it to the network.
         Args:
             size: number of neurons of the generated layer.
-            activation_function: name of the activation function.
+            function: name of the activation function.
         """
 
-        new_layer = Layer(size, activation_function)
+        new_layer = Layer(size, function)
         self._layers.append(new_layer)
 
     def remove_layer(self, layer_id=0):
@@ -73,11 +73,8 @@ class Layer:
         self._set_function(function)
 
     def _set_size(self, size):
-        try:
-            for x in xrange(size):
-                self._add_neuron()
-        except IndexError:
-            print "Layer with id", layer_id, "doesn't exist"
+        for x in xrange(size):
+            self._add_neuron()
 
     def _set_function(self, function):
         for neuron in self._neurons:
@@ -107,7 +104,7 @@ class Neuron:
     def set_function(self, function):
         """Sets the activation function.
         Args:
-            function_name: name of the function.
+            function: name of the function.
         """
 
         self._function = FUNCTIONS[function][0]
@@ -125,7 +122,7 @@ class Neuron:
     def add_link(self, direction, neuron):
         """Adds an inbound or outbound link.
         Args:
-            direction: "in" for inbound links, "out" for oubound ones.
+            direction: "in" for inbound links, "out" for outbound ones.
             neuron: instance of Neuron class the link points to.
         """
 
