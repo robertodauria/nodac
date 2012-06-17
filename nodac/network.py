@@ -71,6 +71,32 @@ class NeuralNetwork:
         except IndexError:
             print "Layer with id", layer_id, "doesn't exist"
 
+    def dump(self):
+        """Print the network internal state."""
+        nlayer = 0
+        print "Number of layers:", len(self._layers)
+        for layer in self._layers:
+            print "\n---- Layer", nlayer, "----"
+            nlayer += 1
+
+            print "Number of neurons:", len(layer._neurons)
+            for neuron in layer._neurons:
+                print "Inbound links:", neuron._in_links
+                print "Outbound links:", neuron._out_links
+                print "(Inbound) Weights:", neuron._weights
+
+    def run(self, inputs):
+        print "\n\n##############################"
+        print "#     Executing network...   #"
+        print "##############################"
+        for layer in self._layers:
+
+            layer.activate(inputs)
+            inputs = []
+            for neuron in layer._neurons:
+                inputs.append(neuron._last_activation)
+
+        print "Network output:", inputs # now this is the output of the network
 
 class Layer:
     """A layer of the neural network."""
@@ -79,6 +105,9 @@ class Layer:
         self._neurons = []
         self._set_size(size)
         self._set_function(function)
+        self._is_input = False
+        self._is_hidden = False
+        self._is_output = False
 
     def _set_size(self, size):
         for x in xrange(size):
@@ -90,7 +119,11 @@ class Layer:
 
     def _add_neuron(self):
         new_neuron = Neuron()
+        new_neuron.set_parent(self)
         self._neurons.append(new_neuron)
+
+    def set_input(self):
+        self._is_input = True
 
     def connect_previous(self, previous_layer):
         """Connect the layer with the previous one creating inbound links to previous_layer."""
@@ -109,10 +142,14 @@ class Layer:
         for neuron in self._neurons:
             neuron.init_weights()
 
-    def activate(self):
+    def activate(self, inputs):
         """Activate each neuron of the layer."""
-        pass
-
+        print "-------------------------------"
+        for neuron in self._neurons:
+            neuron.activate(inputs)
+        print "-------------------------------"
+        print "        Layer terminated       "
+        print "-------------------------------"
 
 class Neuron:
     """Represents an artificial neuron."""
@@ -124,6 +161,10 @@ class Neuron:
         self._in_links = []               # Inbound links
         self._out_links = []              # Outbound links
         self._weights = []                # Inbound links' weights
+        self._parent = None               # Reference to parent layer
+
+    def set_parent(self, parent):
+        self._parent = parent
 
     def set_function(self, function):
         """Sets the activation function.
@@ -137,7 +178,7 @@ class Neuron:
     def get_last_result(self):
         """Returns the result of last neuron activation."""
 
-        return self._last_result
+        return self._last_activation
 
     def init_weights(self):
         """Randomly initializes weights of inbound links."""
@@ -156,7 +197,21 @@ class Neuron:
         elif direction is "out":
             self._out_links.append(neuron)
 
-    def activate(self):
+    def activate(self, inputs):
         """Activates the neuron and stores the result."""
+        weighted_avg = 0
+        for i in xrange(len(inputs)):
 
-        pass
+            # If the neuron belongs to an input layer,
+            # we don't need to multiply it
+            if self._parent._is_input:
+                weighted_avg += inputs[i]
+            else:
+                print "I:", inputs[i], " - W:", self._weights[i]
+                weighted_avg += inputs[i] * self._weights[i]
+
+        # Call activation function
+        self._last_activation = self._function(weighted_avg)
+
+        print "Neuron input:", weighted_avg
+        print "Neuron activation result:", weighted_avg
