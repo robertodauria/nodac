@@ -28,4 +28,13 @@ if __name__ == '__main__':
 from nodac import network
 
 NN = network.NeuralNetwork()
-NN.add_layer(10, "tanh")
+i = NN.add_layer(10, "tanh")
+h = NN.add_layer(10, "tanh")
+o = NN.add_layer(5, "tanh")
+
+i.connect_next(h)
+h.connect_previous(i)
+h.connect_next(o)
+o.connect_previous(h)
+
+NN.initialize()

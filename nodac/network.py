@@ -21,7 +21,8 @@
 
 """This module contains neural network classes."""
 
-from nodac.functions import FUNCTIONS
+import random
+from functions import FUNCTIONS
 
 class NeuralNetwork:
     """A feed-forward neural network """
@@ -40,7 +41,8 @@ class NeuralNetwork:
         return self._layers
 
     def add_layer(self, size=0, function="tanh"):
-        """Generate a layer of the given size and adds it to the network.
+        """Generate a layer of the given size and add it to the network.
+        Return the generated layer.
         Args:
             size: number of neurons of the generated layer.
             function: name of the activation function.
@@ -48,6 +50,12 @@ class NeuralNetwork:
 
         new_layer = Layer(size, function)
         self._layers.append(new_layer)
+        return new_layer
+
+    def initialize(self):
+        """Call initialize() on each layer of the network"""
+        for layer in self._layers:
+            layer.initialize()
 
     def remove_layer(self, layer_id=0):
         """Removes the layer with the given id.
@@ -84,19 +92,35 @@ class Layer:
         new_neuron = Neuron()
         self._neurons.append(new_neuron)
 
+    def connect_previous(self, previous_layer):
+        """Connect the layer with the previous one creating inbound links to previous_layer."""
+        for neuron in self._neurons:
+            for dest in previous_layer._neurons:
+                neuron.add_link('in', dest)
+
+    def connect_next(self, next_layer):
+        """Connect the layer with the next one creating outbound links to next_layer."""
+        for neuron in self._neurons:
+            for dest in next_layer._neurons:
+                neuron.add_link('out', dest)
+
+    def initialize(self):
+        """Call init_weights() on each neuron of the layer."""
+        for neuron in self._neurons:
+            neuron.init_weights()
+
     def activate(self):
         """Activate each neuron of the layer."""
-
         pass
 
 
 class Neuron:
-    """Represents an artificial neuron """
+    """Represents an artificial neuron."""
 
     def __init__(self):
         self._function = None             # Activation function
         self._function_derivative = None  # Activation function derivative
-        self._last_result = 0             # Last activation result
+        self._last_activation = 0         # Last activation value
         self._in_links = []               # Inbound links
         self._out_links = []              # Outbound links
         self._weights = []                # Inbound links' weights
@@ -117,7 +141,8 @@ class Neuron:
 
     def init_weights(self):
         """Randomly initializes weights of inbound links."""
-        pass
+        for n in xrange(len(self._in_links)):
+            self._weights.append(random.random())
 
     def add_link(self, direction, neuron):
         """Adds an inbound or outbound link.
@@ -126,7 +151,10 @@ class Neuron:
             neuron: instance of Neuron class the link points to.
         """
 
-        pass
+        if direction is "in":
+            self._in_links.append(neuron)
+        elif direction is "out":
+            self._out_links.append(neuron)
 
     def activate(self):
         """Activates the neuron and stores the result."""
