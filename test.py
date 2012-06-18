@@ -44,29 +44,26 @@ o.connect_previous(h)
 
 NN.initialize()
 
-#NN.weights()
-
 patterns = [
-   [[0, 0], [0]],
-   [[0, 1], [1]],
-   [[1, 0], [1]],
-   [[1, 1], [0]]
+    [[0, 0], [0]],
+    [[0, 1], [1]],
+    [[1, 0], [1]],
+    [[1, 1], [0]]
 ]
 
 def train():
-    for i in xrange(1000):
-       error = 0
-       for pat in patterns:
-           inputs = pat[0]
-           targets = pat[1]
-
-           NN.run(inputs)
-           error += NN.backpropagate(targets, 0.5, 0.1)
-       if i % 100 == 0:
-           print('error %-.5f' % error)
+    for i in xrange(10000):
+        error = 0
+        for pat in patterns:
+            inputs = pat[0]
+            targets = pat[1]
+            NN.run(inputs)
+            error += NN.backpropagate(targets, 0.5, 0.1)
+        if i % 100 == 0:
+            print 'error %-.5f' % error
 
 cProfile.run('train()')
-print "[0,0] ->", NN.run([0, 0])
-print "[0,1] ->", NN.run([0, 1])
-print "[1,0] ->", NN.run([1, 0])
-print "[1,1] ->", NN.run([1, 1])
+
+for pat in patterns:
+    print pat[0], "-->", NN.run(pat[0])
+

@@ -25,7 +25,8 @@ from math import tanh
 
 def tanh_der(x):
 
-    return 1 - tanh(x) ** 2
+    return 1.0 - x ** 2
+
 def linear(x):
 
     return x

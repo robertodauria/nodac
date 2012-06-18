@@ -22,8 +22,9 @@
 """This module contains neural network classes."""
 
 import random
-random.seed(0)
 from functions import FUNCTIONS
+
+random.seed(0)
 
 DEBUG = True
 
@@ -201,14 +202,14 @@ class Neuron:
     def __init__(self):
         self._function = None             # Activation function
         self._function_derivative = None  # Activation function derivative
-        self._last_activation = 0         # Last activation value
+        self._last_activation = 1.0       # Last activation value
         self._in_links = []               # Inbound links
         self._out_links = []              # Outbound links
         self._is_bias = False             # Bias node flag
         self._weights = []                # Inbound links' weights
         self._delta = 0                   # Neuron's deltas
         self._last_error = 0              # Neuron's last error
-        self._last_change = 0             # Last weight's change
+        self._last_change = []            # Last weight's change
         self._parent = None               # Reference to parent layer
         self._id = None                   # Neuron's index in the layer
 
@@ -233,10 +234,10 @@ class Neuron:
     def init_weights(self):
         """Randomly initializes weights of inbound links."""
         for n in xrange(len(self._in_links)):
-            if self._parent._is_hidden:
-                self._weights.append(rand(-0.2, 0.2))
-            else:
-                self._weights.append(rand(-2.0, 2.0))
+           if self._parent._is_hidden:
+              self._weights.append(rand(-0.2, 0.2))
+           if self._parent._is_output:
+              self._weights.append(rand(-2.0, 2.0))
 
     def add_link(self, direction, neuron):
         """Adds an inbound or outbound link.
@@ -247,28 +248,24 @@ class Neuron:
 
         if direction is "in":
             self._in_links.append(neuron)
+            self._last_change.append(0.0)
         elif direction is "out":
             self._out_links.append(neuron)
 
     def activate(self, inputs):
         """Activates the neuron and stores the result."""
 
-        # If it's a bias node, its value is 1
-        if self._is_bias:
-            self._last_activation = 1
-        else:
-            weighted_avg = 0
-            for i in xrange(len(inputs)):
-
+        if not self._is_bias:
+            if self._parent._is_input:
                 # If the neuron belongs to an input layer,
                 # we don't need to multiply its inputs
-                if self._parent._is_input:
-                    weighted_avg += inputs[i]
-                else:
+                self._last_activation = self._function(inputs[self._parent._neurons.index(self)])
+            else:
+                weighted_avg = 0
+                for i in xrange(len(inputs)):
                     weighted_avg += inputs[i] * self._weights[i]
-
-            # Call activation function
-            self._last_activation = self._function(weighted_avg)
+                # Call activation function
+                self._last_activation = self._function(weighted_avg)
 
     def calculate_deltas(self, output):
         if self._parent._is_output:
@@ -285,5 +282,6 @@ class Neuron:
     def update_weights(self, N, M):
         for i in xrange(len(self._in_links)):
             change = self._delta * self._in_links[i].get_last_activation()
-            self._weights[i] = self._weights[i] + N * change + M * self._last_change
-            self._last_change = change
+            self._weights[i] = self._weights[i] + N * change + M * self._last_change[i]
+            self._last_change[i] = change
+
