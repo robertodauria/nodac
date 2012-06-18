@@ -28,10 +28,13 @@ if __name__ == '__main__':
 from nodac import network
 
 NN = network.NeuralNetwork()
-i = NN.add_layer(2, "tanh")
-i.set_input()
-h = NN.add_layer(3, "tanh")
+i = NN.add_layer(2, "linear")
+h = NN.add_layer(2, "tanh")
 o = NN.add_layer(1, "tanh")
+
+i.set_input()
+h.set_hidden()
+o.set_output()
 
 i.connect_next(h)
 h.connect_previous(i)
@@ -39,5 +42,27 @@ h.connect_next(o)
 o.connect_previous(h)
 
 NN.initialize()
-NN.dump()
-NN.run([1, 2])
+
+#NN.weights()
+
+patterns = [
+   [[0, 0], [0]],
+   [[0, 1], [1]],
+   [[1, 0], [1]],
+   [[1, 1], [0]]
+]
+for i in xrange(1000):
+   error = 0
+   for pat in patterns:
+       inputs = pat[0]
+       targets = pat[1]
+
+       NN.run(inputs)
+       error += NN.backpropagate(targets, 0.5, 0.1)
+   if i % 100 == 0:
+       print('error %-.5f' % error)
+
+print "[0,0] ->", NN.run([0, 0])
+print "[0,1] ->", NN.run([0, 1])
+print "[1,0] ->", NN.run([1, 0])
+print "[1,1] ->", NN.run([1, 1])

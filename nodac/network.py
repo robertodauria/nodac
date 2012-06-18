@@ -22,7 +22,14 @@
 """This module contains neural network classes."""
 
 import random
+random.seed(0)
+import objgraph
 from functions import FUNCTIONS
+
+DEBUG = True
+
+def rand(a, b):
+    return (b - a) * random.random() + a
 
 class NeuralNetwork:
     """A feed-forward neural network """
@@ -84,19 +91,38 @@ class NeuralNetwork:
                 print "Inbound links:", neuron._in_links
                 print "Outbound links:", neuron._out_links
                 print "(Inbound) Weights:", neuron._weights
+                print "Neuron pointer:", neuron
+
+    def weights(self):
+        layers = self._layers[:0:-1] # Reverse layers' list removing the input layer
+        for layer in layers:
+            for neuron in layer._neurons:
+                print neuron._weights
 
     def run(self, inputs):
-        print "\n\n##############################"
-        print "#     Executing network...   #"
-        print "##############################"
         for layer in self._layers:
 
             layer.activate(inputs)
             inputs = []
             for neuron in layer._neurons:
-                inputs.append(neuron._last_activation)
+                inputs.append(neuron.get_last_activation())
 
-        print "Network output:", inputs # now this is the output of the network
+        return inputs
+
+    def backpropagate(self, outputs, N, M):
+        layers = self._layers[:0:-1] # Reverse layers' list removing the input layer
+
+        for layer in layers:
+            layer.calculate_deltas(outputs)
+
+        for layer in layers:
+            layer.update_weights(N, M)
+
+        error = 0.0
+        for neuron in layers[0]._neurons:
+            error += 0.5 * neuron._last_error ** 2
+
+        return error
 
 class Layer:
     """A layer of the neural network."""
@@ -117,13 +143,22 @@ class Layer:
         for neuron in self._neurons:
             neuron.set_function(function)
 
-    def _add_neuron(self):
+    def _add_neuron(self, bias=False):
         new_neuron = Neuron()
-        new_neuron.set_parent(self)
         self._neurons.append(new_neuron)
+        new_neuron.set_parent(self)
+        if bias:
+            new_neuron._is_bias = True
 
     def set_input(self):
         self._is_input = True
+        self._add_neuron(True)
+
+    def set_hidden(self):
+        self._is_hidden = True
+
+    def set_output(self):
+        self._is_output = True
 
     def connect_previous(self, previous_layer):
         """Connect the layer with the previous one creating inbound links to previous_layer."""
@@ -144,12 +179,22 @@ class Layer:
 
     def activate(self, inputs):
         """Activate each neuron of the layer."""
-        print "-------------------------------"
         for neuron in self._neurons:
             neuron.activate(inputs)
-        print "-------------------------------"
-        print "        Layer terminated       "
-        print "-------------------------------"
+
+    def calculate_deltas(self, outputs):
+        """Calculate layer's deltas."""
+        if self._is_output:
+            if len(outputs) != len(self._neurons):
+                print "Error: dataset length doesn't match number of neurons."
+                exit()
+
+        for neuron in self._neurons:
+            neuron.calculate_deltas(outputs)
+
+    def update_weights(self, N, M):
+        for neuron in self._neurons:
+            neuron.update_weights(N, M)
 
 class Neuron:
     """Represents an artificial neuron."""
@@ -160,11 +205,17 @@ class Neuron:
         self._last_activation = 0         # Last activation value
         self._in_links = []               # Inbound links
         self._out_links = []              # Outbound links
+        self._is_bias = False             # Bias node flag
         self._weights = []                # Inbound links' weights
+        self._delta = 0                   # Neuron's deltas
+        self._last_error = 0              # Neuron's last error
+        self._last_change = 0             # Last weight's change
         self._parent = None               # Reference to parent layer
+        self._id = None                   # Neuron's index in the layer
 
     def set_parent(self, parent):
         self._parent = parent
+        self._id = self._parent._neurons.index(self) # Retrieves the neuron's index
 
     def set_function(self, function):
         """Sets the activation function.
@@ -175,7 +226,7 @@ class Neuron:
         self._function = FUNCTIONS[function][0]
         self._function_derivative = FUNCTIONS[function][1]
 
-    def get_last_result(self):
+    def get_last_activation(self):
         """Returns the result of last neuron activation."""
 
         return self._last_activation
@@ -183,7 +234,10 @@ class Neuron:
     def init_weights(self):
         """Randomly initializes weights of inbound links."""
         for n in xrange(len(self._in_links)):
-            self._weights.append(random.random())
+            if self._parent._is_hidden:
+                self._weights.append(rand(-0.2, 0.2))
+            else:
+                self._weights.append(rand(-2.0, 2.0))
 
     def add_link(self, direction, neuron):
         """Adds an inbound or outbound link.
@@ -199,19 +253,38 @@ class Neuron:
 
     def activate(self, inputs):
         """Activates the neuron and stores the result."""
-        weighted_avg = 0
-        for i in xrange(len(inputs)):
 
-            # If the neuron belongs to an input layer,
-            # we don't need to multiply it
-            if self._parent._is_input:
-                weighted_avg += inputs[i]
-            else:
-                print "I:", inputs[i], " - W:", self._weights[i]
-                weighted_avg += inputs[i] * self._weights[i]
+        # If it's a bias node, its value is 1
+        if self._is_bias:
+            self._last_activation = 1
+        else:
+            weighted_avg = 0
+            for i in xrange(len(inputs)):
 
-        # Call activation function
-        self._last_activation = self._function(weighted_avg)
+                # If the neuron belongs to an input layer,
+                # we don't need to multiply its inputs
+                if self._parent._is_input:
+                    weighted_avg += inputs[i]
+                else:
+                    weighted_avg += inputs[i] * self._weights[i]
 
-        print "Neuron input:", weighted_avg
-        print "Neuron activation result:", weighted_avg
+            # Call activation function
+            self._last_activation = self._function(weighted_avg)
+
+    def calculate_deltas(self, output):
+        if self._parent._is_output:
+            error = output[self._id] - self.get_last_activation()
+            self._delta = self._function_derivative(self.get_last_activation()) * error
+            self._last_error = error
+        else:
+            error = 0
+            for neuron in self._out_links:
+                error += neuron._delta * neuron._weights[self._id]
+            self._delta = self._function_derivative(self.get_last_activation()) * error
+            self._last_error = error
+
+    def update_weights(self, N, M):
+        for i in xrange(len(self._in_links)):
+            change = self._delta * self._in_links[i].get_last_activation()
+            self._weights[i] = self._weights[i] + N * change + M * self._last_change
+            self._last_change = change

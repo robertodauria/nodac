@@ -26,5 +26,11 @@ from math import tanh
 def tanh_der(x):
 
     return 1 - tanh(x) ** 2
+def linear(x):
 
-FUNCTIONS = {'tanh': (tanh, tanh_der)}
+    return x
+
+def linear_der(x):
+    return 1
+
+FUNCTIONS = {'tanh': (tanh, tanh_der), 'linear': (linear, 1)}
