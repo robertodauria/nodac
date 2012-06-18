@@ -235,9 +235,9 @@ class Neuron:
         """Randomly initializes weights of inbound links."""
         for n in xrange(len(self._in_links)):
            if self._parent._is_hidden:
-              self._weights.append(rand(-0.2, 0.2))
+               self._weights.append(rand(-0.2, 0.2))
            if self._parent._is_output:
-              self._weights.append(rand(-2.0, 2.0))
+               self._weights.append(rand(-2.0, 2.0))
 
     def add_link(self, direction, neuron):
         """Adds an inbound or outbound link.
