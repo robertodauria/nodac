@@ -23,7 +23,6 @@
 
 import random
 random.seed(0)
-import objgraph
 from functions import FUNCTIONS
 
 DEBUG = True
